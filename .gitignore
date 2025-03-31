@@ -1,0 +1,72 @@
+# CodeIgniter 4 專案標準 .gitignore
+
+# 系統環境檔案
+.env
+.env.backup
+env
+
+# 編輯器/IDE 檔案
+.idea/
+.vscode/
+*.code-workspace
+*.sublime-workspace
+*.sublime-project
+nbproject/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 專案相關的忽略檔案
+/vendor/
+/writable/cache/*
+!/writable/cache/index.html
+/writable/logs/*
+!/writable/logs/index.html
+/writable/session/*
+!/writable/session/index.html
+/writable/uploads/*
+!/writable/uploads/index.html
+/writable/debugbar/*
+!/writable/debugbar/.gitkeep
+
+# CI4 專門的目錄
+user_guide_src/
+user_guide/
+/public/build/
+system/ThirdParty/PHP-Parser/
+system/ThirdParty/kint/
+system/ThirdParty/escaper/
+
+# 測試相關
+/phpunit*.xml
+/.phpunit.*.cache
+/tests/coverage*
+
+# 媒體和上傳檔案
+/public/images/
+/public/uploads/
+/image/
+/public/assets/upload/
+
+# 依賴管理工具
+/build/
+/composer.lock
+/spark
+
+# 日誌檔案
+*.log
+/logs/
+
+# 暫存檔案
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# 站點專用檔案
+/public/sitemap.xml
+/public/robots.txt
+
+# 暫存目錄
+/temp/
+/tmp/

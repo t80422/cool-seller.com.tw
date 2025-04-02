@@ -1,14 +1,3 @@
-<?php
-
-$url = substr(explode('?', $_SERVER['REQUEST_URI'])[0], 1); // user/edit/1
-
-$urlsplit = explode('/', $url); // ['user','edit','1']
-
-$CurrnetC = strtoupper($urlsplit[0]); // USER
-
-
-?>
-
 <!DOCTYPE html>
 <html>
 
@@ -39,53 +28,71 @@ $CurrnetC = strtoupper($urlsplit[0]); // USER
             <div class="aside-main">
                 <nav class="nav-wrap">
                     <ul class="nav-list">
-                        <li class="nav-item ">
-                            <a href="<?php echo url_to('Backend\Setting::mypage'); ?>"><span>主頁</span></a>
+                        <li class="nav-item">
+                            <a href="<?= url_to('Setting::mypage'); ?>"><span>主頁</span></a>
                         </li>
-                        <li class="nav-item <?php if($CurrnetC == "Banners"){ echo "is-active"; }?> ">
-                            <a href="<?php echo url_to('Backend\Banners::index'); ?>"><span>Banner管理</span></a>
+
+                        <?php 
+                        // 獲取當前用戶權限等級
+                        $userPower = session()->get('u_power') ?? 0;
+                        $userId = session()->get('USER_ID');
+                        
+                        // 如果是管理者，顯示所有菜單
+                        $isAdmin = ($userPower == 99);
+                        
+                        // 獲取權限設定
+                        $permModel = new \App\Models\PermissionModel();
+                        
+                        // 獲取用戶實際權限列表
+                        $permData = $permModel->getPermissionByUserId($userId);
+                        $userPermissions = [];
+                        if ($permData) {
+                            $userPermissions = json_decode($permData['p_permissions'], true) ?: [];
+                        }
+                        ?>
+
+                        <?php if($isAdmin || $permModel->hasPermission($userPower, 'account')): ?>
+                        <li class="nav-item">
+                            <a href="<?= url_to('User::index'); ?>"><span>帳號管理</span></a>
                         </li>
-                        <li class="nav-item <?php if($CurrnetC == "ProductMC"){ echo "is-active"; }?> ">
-                            <a href="<?php echo url_to('Backend\ProductMC::index'); ?>"><span>產品大分類管理</span></a>
+                        <?php endif; ?>
+
+                        <?php if($isAdmin || $permModel->hasPermission($userPower, 'videos')): ?>
+                        <li class="nav-item">
+                            <a href="<?= url_to('Videos::index'); ?>"><span>創業教學管理</span></a>
                         </li>
-                        <li class="nav-item <?php if($CurrnetC == "ProductSC"){ echo "is-active"; }?> ">
-                            <a href="<?php echo url_to('Backend\ProductSC::index'); ?>"><span>產品小分類管理</span></a>
+                        <?php endif; ?>
+
+                        <?php if($isAdmin || $permModel->hasPermission($userPower, 'tags')): ?>
+                        <li class="nav-item">
+                            <a href="<?= url_to('Tags::index'); ?>"><span>TAG管理</span></a>
                         </li>
-						<li class="nav-item <?php if($CurrnetC == "Product"){ echo "is-active"; }?> ">
-                            <a href="<?php echo url_to('Backend\Product::index'); ?>"><span>產品管理</span></a>
+                        <?php endif; ?>
+
+                        <?php if($isAdmin || $permModel->hasPermission($userPower, 'product_group')): ?>
+                        <li class="nav-item">
+                            <a href="<?= url_to('ProductGroup::index'); ?>"><span>作品分類管理</span></a>
                         </li>
-                        <li class="nav-item <?php if ($CurrnetC == "LOCKDATA") {
-                                                echo "is-active";
-                                            } ?> ">
-                            <a href="<?= url_to('News::index_backend'); ?>"><span>活動訊息管理</span></a>
+                        <?php endif; ?>
+
+                        <?php if($isAdmin || $permModel->hasPermission($userPower, 'products')): ?>
+                        <li class="nav-item">
+                            <a href="<?= url_to('Products::index'); ?>"><span>作品管理</span></a>
                         </li>
-                        <li class="nav-item <?php if ($CurrnetC == "LOCKDATA") {
-                                                echo "is-active";
-                                            } ?> ">
-                            <a href="<?= url_to('Support::index_download'); ?>"><span>技術支援管理</span></a>
-                        </li>
-                        <li class="nav-item <?php if ($CurrnetC == "LOCKDATA") {
-                                                echo "is-active";
-                                            } ?> ">
-                            <a href="<?= url_to('Support::index_consultations'); ?>"><span>產品諮詢服務管理</span></a>
-                        </li>
-                        <li class="nav-item <?php if ($CurrnetC == "LOCKDATA") {
-                                                echo "is-active";
-                                            } ?> ">
+                        <?php endif; ?>
+
+                        <?php if($isAdmin || $permModel->hasPermission($userPower, 'contact')): ?>
+                        <li class="nav-item">
                             <a href="<?= url_to('Contact::index'); ?>"><span>聯絡我們管理</span></a>
                         </li>
-
-                        <li class="nav-item <?php if ($CurrnetC == "USER") {
-                                                echo "is-active";
-                                            } ?> ">
-                            <a href="<?= url_to('Backend\User::index'); ?>"><span>帳號管理</span></a>
-                        </li>
-
+                        <?php endif; ?>
                     </ul>
                 </nav>
             </div>
+
             <div class="aside-bottom">
-                <button class="btn-logout" onClick="location.href='<?php echo url_to('Backend\Login::logout'); ?>'">登出</button>
+                <button class="btn-logout" onClick="location.href='<?= url_to('Login::logout'); ?>'">登出</button>
+
                 <div class="aside-time">
                     <span>登入時間</span>
                     <time><?php if (session()->get('LOGIN_TIME')) {
@@ -95,12 +102,7 @@ $CurrnetC = strtoupper($urlsplit[0]); // USER
             </div>
             <button class="aside-close"></button>
         </aside>
-        <div class="top-banner">
-            <div class="banner-content">
-                <!-- 可以放置標題或其他內容 -->
-            </div>
-        </div>
-        <button class="nav-btn"></button>
+
         <!-- main -->
         <?php $this->renderSection('content'); ?>
 

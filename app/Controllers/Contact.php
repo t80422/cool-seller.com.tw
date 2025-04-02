@@ -2,9 +2,10 @@
 
 namespace App\Controllers;
 
+use CodeIgniter\Controller;
 use App\Models\ContactModel;
 
-class Contact extends BaseController
+class Contact extends Controller
 {
     private $contactModel;
 
@@ -42,18 +43,33 @@ class Contact extends BaseController
         $datas = $this->contactModel->getList($keyword, $page);
         $pager_links = $pager->makeLinks($page, $datas['perPage'], $datas['total'], 'backend_pages');
 
-        return view('contact\index', [
-            'datas' => $datas['items'],
+        $data = [
             'pager_links' => $pager_links,
-            'keyword' => !empty($keyword) ? $keyword : ''
-        ]);
+            'Datas' => $datas['items'],
+            'keyword' => !empty($this->request->getGet('keyword')) ? $this->request->getGet('keyword') : '',
+        ];
+
+        return view('backend/contact/index', $data);
     }
 
     // 刪除資料
-    public function delete($id = null)
+    public function delitem($sn = null)
     {
-        $this->contactModel->delete($id);
+        $this->contactModel->delete($sn);
+        return redirect()->back()->with('message', '聯絡我們項目已刪除');
+    }
 
-        return redirect()->back();
+    // 查看詳細訊息
+    public function view($id = null)
+    {
+        $data = $this->contactModel->find($id);
+
+        if (empty($data)) {
+            return redirect()->to('backend/contact')->with('error', '找不到指定的聯絡我們項目');
+        }
+
+        return view('backend/contact/view', [
+            'contact' => $data
+        ]);
     }
 }

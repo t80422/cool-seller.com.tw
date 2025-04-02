@@ -11,9 +11,11 @@
                 <button type="button" onclick="search();"></button>
             </div>
 
+            <?php if ($isAdmin): ?>
             <div class="tool-btn">
-                <button class="btn-add" onClick="window.location.href='<?php echo url_to('Backend\User::create'); ?>'">新增</button>
+                <button class="btn-add" onClick="window.location.href='<?= url_to('User::create'); ?>'">新增</button>
             </div>
+            <?php endif; ?>
         </div>
 
         <!-- list -->
@@ -22,21 +24,31 @@
                 <div class="list-main">
                     <div class="list-title pr-2 pl-2">
                         <div class="f-1">名稱</div>
-                        <div class="f-1 ta-left ml-6">帳號</div>
-                        <div class="f-1 ta-left">信箱</div>
-                        <div class="f-1">建檔日期</div>
+                        <div class="f-1">帳號</div>
+                        <div class="f-1">權限</div>
+                        <div class="f-1">建立時間</div>
+                        <div class="f-1">修改時間</div>
+                        <div class="f-1">最後登入時間</div>
+                        <div class="f-1">啟用</div>
                         <div class="f-1">操作</div>
                     </div>
 
-                    <?php foreach ($Users as $user): ?>
+                    <?php foreach ($datas as $user): ?>
                         <div class="list-row pr-2 pl-2">
                             <div class="f-1"><?= $user['u_name']; ?></div>
-                            <div class="f-1 ta-left ml-6"><?= $user['u_account']; ?></div>
-                            <div class="f-1 ta-left"><?= $user['u_email']; ?></div>
+                            <div class="f-1"><?= $user['u_account']; ?></div>
+                            <div class="f-1"><?= $user['u_power'] == 99 ? '管理者' : '一般使用者'; ?></div>
                             <div class="f-1"><?= $user['u_create_time']; ?></div>
+                            <div class="f-1"><?= $user['u_update_time']; ?></div>
+                            <div class="f-1"><?= $user['u_last_login']; ?></div>
                             <div class="f-1">
-                                <button class="btn-edit" onClick="location.href='<?= url_to('Backend\User::edit', $user['u_sn']); ?>'"></button>
-                                <button class="btn-del" data-sn="<?php echo $user['u_sn']; ?>"></button>
+                                <input type="checkbox" <?= $user['u_enabled'] ? 'checked' : ''; ?> disabled>
+                            </div>
+                            <div class="f-1">
+                                <button class="btn-edit" onClick="location.href='<?= url_to('User::edit', $user['u_id']); ?>'"></button>
+                                <?php if ($isAdmin): ?>
+                                <button class="btn-del" data-sn="<?= $user['u_id']; ?>"></button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -45,7 +57,7 @@
         </div>
 
         <!-- pages -->
-        <?php echo $pager_links; ?>
+        <?= $pager_links; ?>
     </div>
 
     <div class="popup-wrap js-del-popup">
@@ -67,7 +79,7 @@
 
 <script>
     function search() {
-        location.href = '<?php echo url_to('Backend\User::index'); ?>' + "?keyword=" + $('input[name="keyword"]').val()
+        location.href = '<?php echo url_to('User::index'); ?>' + "?keyword=" + $('input[name="keyword"]').val()
     }
 
     $(function() {
@@ -82,7 +94,7 @@
         });
 
         $(".popup-btn .btn-submit").on('click', function() {
-            location.href = '<?php echo url_to('Backend\User::index'); ?>' + '/delitem/' + sn;
+            location.href = '<?php echo url_to('User::index'); ?>' + '/delitem/' + sn;
         })
     });
 </script>

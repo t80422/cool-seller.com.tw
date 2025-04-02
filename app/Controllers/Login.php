@@ -5,14 +5,17 @@ namespace App\Controllers;
 use CodeIgniter\Controller;
 
 use App\Models\UsersModel;
+use App\Models\PermissionModel;
 
 class Login extends Controller
 {
     protected $userModel;
+    protected $permissionModel;
     
     public function __construct()
     {
         $this->userModel = new UsersModel();
+        $this->permissionModel = new PermissionModel();
     }
     
     public function index()
@@ -46,7 +49,7 @@ class Login extends Controller
                 session()->set('USER_NAME', $user['u_name']);
                 session()->set('LOGIN_TIME', date('Y/m/d H:i:s'));
                 session()->set('USER_ID', $user['u_id']);
-                session()->set('USER_POWER', $user['u_power']);
+                session()->set('u_power', $user['u_power']); // 權限等級
                 
                 // 更新登入時間
                 $this->userModel->updateLastLogin($user['u_id']);
@@ -65,9 +68,9 @@ class Login extends Controller
     public function logout()
     {
         session()->remove('USER_NAME');
-        session()->remove('USER_SN');
+        session()->remove('USER_ID');
         session()->remove('LOGIN_TIME');
-        session()->remove('USER_POWER');
-        return redirect()->to('/')->with('message', '已登出系統');
+        session()->remove('u_power');
+        return redirect()->to('/backend')->with('message', '已登出系統');
     }
 }

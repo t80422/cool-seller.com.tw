@@ -2,257 +2,164 @@
 
 namespace App\Controllers;
 
-use App\Models\ProductMainCategoriesModel;
-use App\Models\ProductModel;
-use App\Models\ProductSubCategoriesModel;
+use CodeIgniter\Controller;
+use App\Models\ProductsModel;
+use App\Models\ProductGroupModel;
+use App\Models\TagsModel;
 
-class Products extends BaseController
+class Products extends Controller
 {
-    private $pmcModel;
-    private $pscModel;
-    private $productModel;
+    private $productsModel;
+    private $pgModel;
+    private $tagModel;
 
     public function __construct()
     {
-        $this->pmcModel = new ProductMainCategoriesModel();
-        $this->pscModel = new ProductSubCategoriesModel();
-        $this->productModel = new ProductModel();
+        $this->productsModel = new ProductsModel();
+        $this->pgModel = new ProductGroupModel();
+        $this->tagModel = new TagsModel();
     }
 
-    // 前台大分類列表
-    public function index_main()
+    // 列表
+    public function index()
     {
-        $datas = $this->pmcModel->findAll();
-
-        $breadcrumbs = [
-            [
-                'name' => '首頁',
-                'url' => '/',
-                'position' => 1
-            ],
-            [
-                'name' => '公司產品',
-                'url' => null,
-                'position' => 2,
-                'active' => true
-            ]
-        ];
-
-        return view('products/index_main', [
-            'datas' => $datas,
-            'breadcrumbs' => $breadcrumbs
-        ]);
-    }
-
-    // 前台次分類列表
-    public function index_sub(int $pmcId)
-    {
-        $mains = $this->pmcModel->getEnabledCategories();
-        $mainsById = array_column($mains, null, 'pmc_Id');
-        $main = $mainsById[$pmcId] ?? null;
-        $subProducts = $this->pscModel->getByPMCId($pmcId);
-        // 組織麵包屑數據
-        $breadcrumbs = [
-            [
-                'name' => '首頁',
-                'url' => '/',
-                'position' => 1
-            ],
-            [
-                'name' => '公司產品',
-                'url' => '/products',
-                'position' => 2
-            ],
-            [
-                'name' => $main['pmc_Name'],
-                'url' => null,
-                'position' => 3,
-                'active' => true
-            ]
-        ];
-
-        return view('products/index_sub', [
-            'breadcrumbs' => $breadcrumbs,
-            'mains' => $mains,
-            'mainProduct' => $main,
-            'category' => $main['pmc_Name'],
-            'subProducts' => $subProducts
-        ]);
-    }
-
-    // 前台列表
-    public function index(int $pscId)
-    {
-        $keyword = $this->request->getGet('keyword') ?? '';
-
-        // 標籤
-        $selectedTags = $this->request->getGet('tags') ?? [];
-
-        if (!is_array($selectedTags)) {
-            $selectedTags = [$selectedTags];
-        }
-
-        // 分頁
-        $page = (int)$this->request->getGet('page') ?: 1;
-
-        $result = $this->productModel->search($keyword, $selectedTags, $page, $pscId);
-        $products = $result['products'];
-        $subCategory = $this->pscModel->find($pscId);
-        $mainCategory = $this->pmcModel->find($subCategory['psc_pmc_Id']);
-        $mainCategoryId = $mainCategory['pmc_Id'];
-        $subCategories = $this->pscModel->getByPMCId($mainCategoryId);
-
-        $breadcrumbs = [
-            [
-                'name' => '首頁',
-                'url' => '/',
-                'position' => 1
-            ],
-            [
-                'name' => '公司產品',
-                'url' => '/products',
-                'position' => 2
-            ],
-            [
-                'name' => $mainCategory['pmc_Name'],
-                'url' => '/products/index_sub/' . $mainCategoryId,
-                'position' => 3
-            ],
-            [
-                'name' => $subCategory['psc_Name'],
-                'url' => null,
-                'position' => 4,
-                'active' => true
-            ]
-        ];
-
-        $tags = explode(',', $subCategory['psc_Tag']);
-
-        // 去除標籤中可能的空格
-        $tags = array_map('trim', $tags);
-
-        // 過濾空標籤
-        $tags = array_filter($tags, function ($tag) {
-            return !empty($tag);
-        });
-
-        return view('products/index', [
-            'breadcrumbs' => $breadcrumbs,
-            'subProducts' => $subCategories,
-            'subProduct' => $subCategory,
-            'products' => $products,
-            'keyword' => $keyword,
-            'tags' => $tags,
-            'selectedTags' => $selectedTags,
-            'page' => $result['page'],
-            'totalPages' => $result['totalPages']
-        ]);
-    }
-
-    // 前台詳細
-    public function detail($id = null)
-    {
-        $breadcrumbData = $this->productModel->getProductWithPMCAndPSC($id);
-        $breadcrumbs = [
-            [
-                'name' => '首頁',
-                'url' => '/',
-                'position' => 1
-            ],
-            [
-                'name' => '公司產品',
-                'url' => '/products',
-                'position' => 2
-            ],
-            [
-                'name' => $breadcrumbData['pmc_Name'],
-                'url' => '/products/index_sub/' . $breadcrumbData['pmc_Id'],
-                'position' => 3
-            ],
-            [
-                'name' => $breadcrumbData['psc_Name'],
-                'url' => '/products/index/' . $breadcrumbData['psc_Id'],
-                'position' => 4
-            ],
-            [
-                'name' => $breadcrumbData['p_Name'],
-                'url' => null,
-                'position' => 5,
-                'active' => true
-            ]
-        ];
-
-        $data = $this->productModel->find($id);
-
-        return view('products/detail', [
-            'breadcrumbs' => $breadcrumbs,
-            'data' => $data
-        ]);
-    }
-
-    // 前台搜尋
-    public function search()
-    {
-        // 獲取搜尋關鍵字
         $keyword = $this->request->getGet('keyword');
+        $categoryId = $this->request->getGet('category');
+        $pager = service('pager');
+        $page = (int)($this->request->getGet('page') ?? 1);
+        $datas = $this->productsModel->getList($keyword, $categoryId, $page);
+        $pager_links = $pager->makeLinks($page, $datas['perPage'], $datas['total'], 'backend_pages');
 
-        // 如果沒有提供關鍵字，返回空結果
-        if (empty($keyword)) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => '請輸入搜尋關鍵字',
-                'products' => [],
-                'totalResults' => 0
-            ]);
-        }
+        // 獲取所有啟用的作品分類，用於篩選
+        $categories = $this->pgModel->getEnabledCategories();
 
-        // 調用模型的搜尋方法獲取結果
-        $products = $this->productModel->searchByName($keyword);
-
-        // 準備結果數據
-        $response = [
-            'status' => 'success',
-            'products' => $products,
-            'totalResults' => count($products),
-            'keyword' => $keyword
+        $data = [
+            'pager_links' => $pager_links,
+            'Datas' => $datas['items'],
+            'keyword' => !empty($this->request->getGet('keyword')) ? $this->request->getGet('keyword') : '',
+            'selectedCategory' => $categoryId,
+            'categories' => $categories,
         ];
 
-        // 返回 JSON 響應
-        return $this->response->setJSON($response);
+        return view('backend/products/index', $data);
     }
-
-    // 前台全站搜尋
-    public function globalSearch()
+    
+    // 新增
+    public function create()
     {
-        $keyword = $this->request->getVar('keyword');
-        $mains = $this->pmcModel->findAll();
-        $breadcrumbs = [
-            [
-                'name' => '首頁',
-                'url' => '/',
-                'position' => 1
-            ],
-            [
-                'name' => '公司產品',
-                'url' => '/products',
-                'position' => 2
-            ],
-            [
-                'name' => $keyword,
-                'url' => null,
-                'position' => 3,
-                'active' => true
-            ]
-        ];
-        $page = (int)$this->request->getGet('page') ?: 1;
-        $products = $this->productModel->globalSearch($keyword, $page);
-
-        return view('products/index_global', [
-            'breadcrumbs' => $breadcrumbs,
-            'mains' => $mains,
-            'products' => $products['products'],
-            'page' => $page,
-            'totalPages' => $products['totalPages']
+        // 獲取所有啟用的作品分類
+        $categories = $this->pgModel->getEnabledCategories();
+        
+        // 獲取所有啟用的標籤
+        $tags = $this->tagModel->getEnabledTags();
+        
+        return view('backend/products/form', [
+            'isEdit' => false,
+            'categories' => $categories,
+            'tags' => $tags,
+            'selectedTags' => []
         ]);
     }
-}
+    
+    // 送出新增
+    public function additem()
+    {
+        // 檢查是否為 POST 請求
+        if (! $this->request->is('post')) {
+            return redirect()->back();
+        }
+        
+        // 收集表單數據
+        $data = [
+            'p_name' => $this->request->getVar('name'),
+            'p_description' => $this->request->getVar('description'),
+            'p_pg_id' => $this->request->getVar('category'),
+            'p_link' => $this->request->getVar('link'),
+            'p_sort' => $this->request->getVar('sort'),
+        ];
+        
+        // 獲取選中的標籤
+        $tagIds = $this->request->getVar('tags') ?? [];
+        
+        // 使用模型插入數據與標籤
+        $result = $this->productsModel->addProduct($data, $tagIds);
+        
+        if (!$result['status']) {
+            return redirect()->back()->withInput()->with('validation', $result['errors']);
+        }
+        
+        return redirect()->to(base_url('backend/products'))->with('message', '作品新增成功');
+    }
+    
+    // 刪除資料
+    public function delitem($sn = null)
+    {
+        $result = $this->productsModel->deleteProduct($sn);
+        
+        if ($result) {
+            return redirect()->back()->with('message', '作品已刪除');
+        } else {
+            return redirect()->back()->with('error', '刪除失敗，請稍後再試');
+        }
+    }
+
+    // 修改
+    public function edit($id = null)
+    {
+        // 獲取作品資料
+        $product = $this->productsModel->find($id);
+        
+        if (empty($product)) {
+            return redirect()->to(base_url('backend/products'))->with('error', '找不到此作品');
+        }
+        
+        // 獲取所有啟用的作品分類
+        $categories = $this->pgModel->getEnabledCategories();
+        
+        // 獲取所有啟用的標籤
+        $tags = $this->tagModel->getEnabledTags();
+        
+        // 獲取作品已選擇的標籤
+        $selectedTags = $this->productsModel->getProductTags($id);
+        
+        return view('backend/products/form', [
+            'isEdit' => true,
+            'product' => $product,
+            'categories' => $categories,
+            'tags' => $tags,
+            'selectedTags' => $selectedTags
+        ]);
+    }
+    
+    // 修改資料
+    public function edititem()
+    {
+        // 檢查是否為 POST 請求
+        if (! $this->request->is('post')) {
+            return redirect()->back();
+        }
+        
+        $productId = $this->request->getVar('productId');
+        
+        // 收集表單數據
+        $data = [
+            'p_name' => $this->request->getVar('name'),
+            'p_description' => $this->request->getVar('description'),
+            'p_pg_id' => $this->request->getVar('category'),
+            'p_link' => $this->request->getVar('link'),
+            'p_sort' => $this->request->getVar('sort'),
+        ];
+        
+        // 獲取選中的標籤
+        $tagIds = $this->request->getVar('tags') ?? [];
+        
+        // 使用模型更新數據與標籤
+        $result = $this->productsModel->updateProduct($productId, $data, $tagIds);
+        
+        if (!$result['status']) {
+            return redirect()->back()->withInput()->with('validation', $result['errors']);
+        }
+        
+        return redirect()->to(base_url('backend/products'))->with('message', '作品更新成功');
+    }
+} 

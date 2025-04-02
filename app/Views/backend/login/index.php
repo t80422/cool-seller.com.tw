@@ -34,10 +34,11 @@
             </div>
         </main>
     </article>
+    
     <?php if (session()->getFlashdata('error')): ?>
         <script>
             $(function() {
-                alert('<?php echo session()->getFlashdata('error'); ?>')
+                alert('<?= session()->getFlashdata('error'); ?>')
             })
         </script>
     <?php endif; ?>

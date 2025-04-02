@@ -7,7 +7,7 @@
                 <div class="menu-wrap">
                     <ul class="menu-list">
                         <li class="menu-item is-products">
-                            <a href="<?php echo url_to('Backend\Product::index'); ?>"><span>產品資訊</span></a>
+                            <a href=""><span>產品資訊</span></a>
                         </li>
                                            
                     </ul>

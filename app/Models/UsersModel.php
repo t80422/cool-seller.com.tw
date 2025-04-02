@@ -19,17 +19,12 @@ class UsersModel extends Model
     ];
 
     protected $validationRules = [
-        'u_account' => 'is_unique[users.u_account,u_id,{u_id}]',
-        'u_email' => 'valid_email|is_unique[users.u_email,u_id,{u_id}]'
+        'u_account' => 'is_unique[users.u_account,u_id,{u_id}]'
     ];
 
     protected $validationMessages = [
         'u_account' => [
             'is_unique' => '帳號重複請重新輸入',
-        ],
-        'u_email' => [
-            'valid_email' => '信箱格式不正確',
-            'is_unique' => '信箱重複請重新輸入',
         ]
     ];
 
@@ -87,7 +82,6 @@ class UsersModel extends Model
             $builder->groupStart()
                 ->like('u_name', $keyword)
                 ->orLike('u_account', $keyword)
-                ->orLike('u_email', $keyword)
                 ->groupEnd();
         }
 
@@ -103,5 +97,19 @@ class UsersModel extends Model
             'perPage' => $perPage,
             'items' => $users
         ];
+    }
+    
+    /**
+     * 獲取指定用戶的帳號資訊
+     *
+     * @param int $userId 用戶ID
+     * @return array 用戶資料
+     */
+    public function getListById($userId)
+    {
+        $user = $this->find($userId);
+        
+        // 返回一個數組格式，即使只有一個用戶，保持與 getList 方法返回格式一致
+        return [$user];
     }
 }

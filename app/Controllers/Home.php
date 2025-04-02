@@ -18,21 +18,16 @@ class Home extends BaseController
         $this->pmcModel = new ProductMainCategoriesModel();
         $this->productModel = new ProductModel();
         $this->newsModel = new ActivitiesModel();
-		$this->BannersModel = new BannersModel();
     }
 
     public function index()
     {
-        $pmcs = $this->pmcModel->findAll();
         $prodcuts = $this->productModel->getStarProducts();
         $news = $this->newsModel->getHotActivities();
-		$banners = $this->BannersModel->getAllBanners();
 
         return view('home/index', [
-            'pmcs' => $pmcs,
             'products' => $prodcuts,
             'news' => $news,
-			'banners'=>$banners
         ]);
     }
 }
